@@ -96,8 +96,6 @@
   ></iframe>
 
   <script>
-    const STORAGE_KEY = 'code_renderer_payload';
-
     function setStatus(text, cls) {
       const el = document.getElementById('status');
       el.textContent = text;
@@ -113,9 +111,9 @@
     }
 
     function init() {
-      const html = localStorage.getItem(STORAGE_KEY);
+      const encoded = window.location.hash.slice(1);
 
-      if (!html) {
+      if (!encoded) {
         showError(
           'No code found.\n\n' +
           'Ask the model to generate something — for example:\n' +
@@ -126,12 +124,16 @@
         return;
       }
 
+      let html;
+      try {
+        html = decodeURIComponent(escape(atob(encoded)));
+      } catch (e) {
+        showError(`Failed to decode payload: ${e.message}`);
+        return;
+      }
+
       const frame = document.getElementById('render-frame');
-
-      // srcdoc injects the HTML as a document string.
-      // No URL, no CORS issues, no navigation needed.
       frame.srcdoc = html;
-
       setStatus('running', 'running');
     }
 
