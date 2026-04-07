@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+  <script>
+    const STORAGE_KEY = 'code_renderer_payload';
+
+    window['ai_edge_gallery_get_result'] = async (dataStr) => {
+      try {
+        const input = JSON.parse(dataStr);
+        const html = input.html;
+
+        if (!html || typeof html !== 'string') {
+          return JSON.stringify({ error: 'Code Renderer: no HTML provided in data.html' });
+        }
+
+        // Write the HTML to localStorage so renderer.html can read it.
+        // Both files share the same WebView origin within the skill,
+        // so they share a localStorage partition.
+        localStorage.setItem(STORAGE_KEY, html);
+
+        // Cache-bust the URL on every call so the WebView reloads renderer.html
+        // fresh instead of serving a cached version from a previous invocation.
+        const url = `renderer.html?t=${Date.now()}`;
+
+        return JSON.stringify({
+          result: 'Code rendered. Tap the preview to interact with it.',
+          webview: {
+            url: url,
+            aspectRatio: 1.5
+          }
+        });
+
+      } catch (e) {
+        return JSON.stringify({ error: `Code Renderer error: ${e.message}` });
+      }
+    };
+  </script>
+</body>
+</html>
