@@ -110,6 +110,18 @@
       document.getElementById('render-frame').style.display = 'none';
     }
 
+    /**
+     * Reverse of the URL-safe base64 encoding used in scripts/index.html.
+     * Restores '+' and '/', re-pads with '=' so atob() accepts it, then
+     * decodes UTF-8.
+     */
+    function decodePayload(encoded) {
+      let b64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+      const pad = b64.length % 4;
+      if (pad) b64 += '='.repeat(4 - pad);
+      return decodeURIComponent(escape(atob(b64)));
+    }
+
     function init() {
       const encoded = window.location.hash.slice(1);
 
@@ -126,7 +138,7 @@
 
       let html;
       try {
-        html = decodeURIComponent(escape(atob(encoded)));
+        html = decodePayload(encoded);
       } catch (e) {
         showError(`Failed to decode payload: ${e.message}`);
         return;

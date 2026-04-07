@@ -5,6 +5,20 @@
 </head>
 <body>
   <script>
+    /**
+     * URL-safe base64 encode a JS string containing arbitrary Unicode.
+     * Standard base64 produces '+', '/', '=' — all of which are special in
+     * URLs and can be mangled by WKWebView on iOS when the app hands the
+     * URL to the native webview. Replacing them keeps the fragment intact.
+     */
+    function encodePayload(str) {
+      const utf8 = unescape(encodeURIComponent(str));
+      return btoa(utf8)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    }
+
     window['ai_edge_gallery_get_result'] = async (dataStr) => {
       try {
         const input = JSON.parse(dataStr);
@@ -14,11 +28,11 @@
           return JSON.stringify({ error: 'Code Renderer: no HTML provided in data.html' });
         }
 
-        // Base64-encode the HTML into the hash of renderer.html.
-        // This avoids both the cross-WebView localStorage problem and
-        // the URI length limits of data: URLs.
-        const encoded = btoa(unescape(encodeURIComponent(html)));
-        const url = `renderer.html#${encoded}`;
+        // renderer.html lives in the skill's assets/ folder, which is what
+        // relative webview URLs resolve against. The HTML payload is passed
+        // via the hash fragment so it never hits the server (GitHub Pages)
+        // and isn't subject to query-string length quirks.
+        const url = `renderer.html#${encodePayload(html)}`;
 
         return JSON.stringify({
           result: 'Code rendered. Tap the preview to interact with it.',
