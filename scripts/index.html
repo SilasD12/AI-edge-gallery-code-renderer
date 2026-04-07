@@ -5,8 +5,6 @@
 </head>
 <body>
   <script>
-    const STORAGE_KEY = 'code_renderer_payload';
-
     window['ai_edge_gallery_get_result'] = async (dataStr) => {
       try {
         const input = JSON.parse(dataStr);
@@ -16,14 +14,9 @@
           return JSON.stringify({ error: 'Code Renderer: no HTML provided in data.html' });
         }
 
-        // Write the HTML to localStorage so renderer.html can read it.
-        // Both files share the same WebView origin within the skill,
-        // so they share a localStorage partition.
-        localStorage.setItem(STORAGE_KEY, html);
-
-        // Cache-bust the URL on every call so the WebView reloads renderer.html
-        // fresh instead of serving a cached version from a previous invocation.
-        const url = `renderer.html?t=${Date.now()}`;
+        // Encode the HTML directly as a data URI so no cross-WebView
+        // localStorage sharing is required.
+        const url = `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
 
         return JSON.stringify({
           result: 'Code rendered. Tap the preview to interact with it.',
